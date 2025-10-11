@@ -4,7 +4,7 @@
 
 指定したフォルダ内にある音楽ファイルを、サブフォルダを含めて検索し、ランダムに再生するシンプルなGUIアプリケーションです。
 
-![image](https://github.com/user-attachments/assets/163a8f80-f6df-4b7a-a0f1-1a653f80100a)
+![image](https://github.com/user-attachments/assets/4754e0e0-c38e-4627-8317-2d346b5c6b0e)
 
 ## 主な機能
 
