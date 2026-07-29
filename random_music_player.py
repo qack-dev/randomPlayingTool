@@ -52,6 +52,10 @@ class MusicPlayer:
         self.play_stop_button = tk.Button(control_frame, text="再生", command=self.toggle_play_stop, width=10, state=tk.DISABLED)
         self.play_stop_button.pack(side=tk.LEFT, padx=5)
 
+        # 一時停止/再開ボタン
+        self.pause_button = tk.Button(control_frame, text="一時停止", command=self.toggle_pause, width=10, state=tk.DISABLED)
+        self.pause_button.pack(side=tk.LEFT, padx=5)
+
         # 次の曲へボタン
         self.next_button = tk.Button(control_frame, text="次の曲へ", command=self.play_next, width=10, state=tk.DISABLED)
         self.next_button.pack(side=tk.LEFT, padx=5)
@@ -105,31 +109,28 @@ class MusicPlayer:
         if not self.music_files:
             return
 
-        if self.paused:
-            # 一時停止からの再開
-            pygame.mixer.music.unpause()
-            self.paused = False
-        else:
-            # 新しい曲または次の曲を再生
-            self.current_track_index += 1
-            if self.current_track_index >= len(self.music_files):
-                self.current_track_index = 0 # リストの最初に戻る
-            
-            track_path = self.music_files[self.current_track_index]
-            try:
-                pygame.mixer.music.load(track_path)
-                pygame.mixer.music.play()
-                # 表示を「フォルダの絶対パス / ファイル名」の形式に変更
-                folder_path = os.path.dirname(track_path)
-                file_name = os.path.basename(track_path)
-                self.status_label.config(text=f"再生中: {folder_path} / {file_name}")
-            except pygame.error as e:
-                messagebox.showerror("再生エラー", f"ファイルを再生できませんでした。\n{e}")
-                self.playing = False
-                return
+        # 新しい曲または次の曲を再生
+        self.current_track_index += 1
+        if self.current_track_index >= len(self.music_files):
+            self.current_track_index = 0 # リストの最初に戻る
+
+        track_path = self.music_files[self.current_track_index]
+        try:
+            pygame.mixer.music.load(track_path)
+            pygame.mixer.music.play()
+            # 表示を「フォルダの絶対パス / ファイル名」の形式に変更
+            folder_path = os.path.dirname(track_path)
+            file_name = os.path.basename(track_path)
+            self.status_label.config(text=f"再生中: {folder_path} / {file_name}")
+        except pygame.error as e:
+            messagebox.showerror("再生エラー", f"ファイルを再生できませんでした。\n{e}")
+            self.playing = False
+            return
 
         self.playing = True
+        self.paused = False
         self.play_stop_button.config(text="停止")
+        self.pause_button.config(text="一時停止", state=tk.NORMAL)
 
     def stop_music(self):
         """音楽を停止します。"""
@@ -137,7 +138,29 @@ class MusicPlayer:
         self.playing = False
         self.paused = False # 停止したら一時停止状態もリセット
         self.play_stop_button.config(text="再生")
+        self.pause_button.config(text="一時停止", state=tk.DISABLED)
         self.status_label.config(text="停止中")
+
+    def toggle_pause(self):
+        """一時停止/再開ボタンの状態を切り替えます。"""
+        if not self.playing:
+            return
+
+        if self.paused:
+            # 再開
+            pygame.mixer.music.unpause()
+            self.paused = False
+            self.pause_button.config(text="一時停止")
+            track_path = self.music_files[self.current_track_index]
+            folder_path = os.path.dirname(track_path)
+            file_name = os.path.basename(track_path)
+            self.status_label.config(text=f"再生中: {folder_path} / {file_name}")
+        else:
+            # 一時停止
+            pygame.mixer.music.pause()
+            self.paused = True
+            self.pause_button.config(text="再開")
+            self.status_label.config(text="一時停止中")
 
     def play_next(self):
         """次の曲を再生します。"""
@@ -146,7 +169,7 @@ class MusicPlayer:
 
     def check_music_end(self):
         """再生が終了したかを確認し、終了していれば次の曲を再生します。"""
-        if self.playing and not pygame.mixer.music.get_busy():
+        if self.playing and not self.paused and not pygame.mixer.music.get_busy():
             # 再生中で、かつ再生が終わった場合
             self.play_next()
         
